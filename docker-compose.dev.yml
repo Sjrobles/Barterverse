@@ -1,0 +1,61 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: barterdb
+    ports: ["5432:5432"]
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  chroma:
+    image: chromadb/chroma:latest
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    ports: ["8000:8000"]
+
+  gateway:
+    build: ./apps/gateway
+    env_file: .env
+    depends_on: [postgres, redis, chroma]
+    ports: ["3000:3000"]
+
+  svc-users:
+    build: ./apps/svc-users
+    env_file: .env
+    depends_on: [postgres, redis]
+    ports: ["3001:3000"]
+
+  svc-listings:
+    build: ./apps/svc-listings
+    env_file: .env
+    depends_on: [postgres, chroma]
+    ports: ["3002:3000"]
+
+  svc-trade:
+    build: ./apps/svc-trade
+    env_file: .env
+    depends_on: [postgres, redis]
+    ports: ["3003:3000"]
+
+  svc-reco:
+    build: ./apps/svc-reco
+    env_file: .env
+    depends_on: [chroma]
+    ports: ["3004:3000"]
+
+  svc-notifications:
+    build: ./apps/svc-notifications
+    env_file: .env
+    depends_on: [redis]
+    ports: ["3005:3000"]
+
+  web:
+    build: ./apps/web
+    ports: ["5173:5173"]
+    depends_on: [gateway]
